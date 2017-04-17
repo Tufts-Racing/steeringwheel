@@ -17,7 +17,7 @@ uint8_t disp_page; //display page
 //uint8_t odo; //miles
 uint8_t battery_temp; //Farenheit
 uint8_t t_pressure; //psi
-uint8_t dir; //0 = forward, 1 = neutral, 2 = reverse
+int8_t dir = 0; //1 = forward, 0 = neutral, -1 = reverse. init neutral
 uint8_t spd;//speed in mph
 uint8_t LV_SOC;
 uint8_t HV_SOC;
@@ -26,7 +26,7 @@ uint8_t IMD_FLT;
 uint8_t BMS_FLT;
 uint8_t SEVCON_FLT;
 uint8_t BRAKE_FLT;
-
+uint8_t dir_enabled = 0; //direction enable button is down - init false
 
 void setup() {
   Serial.begin(9600);
@@ -34,8 +34,8 @@ void setup() {
   //UI I/O
   pinMode(SW1_L_IN, INPUT);
   pinMode(SW1_R_IN, INPUT);
-  pinMode(TOGGLE_R_IN, INPUT);
-  pinMode(TOGGLE_L_IN, INPUT);
+  pinMode(FORWARD_IN, INPUT);
+  pinMode(REVERSE_IN, INPUT);
   pinMode(LED_R, OUTPUT);
   //Shift Register Interface
   pinMode(SERIAL_1, OUTPUT);
@@ -46,8 +46,8 @@ void setup() {
   pinMode(CLR_2, OUTPUT);
   
 
-  attachInterrupt(digitalPinToInterrupt(SW1_L_IN), toggle_disp_up, RISING);
-  attachInterrupt(digitalPinToInterrupt(SW1_R_IN), toggle_disp_down, RISING);
+  attachInterrupt(digitalPinToInterrupt(SW1_L_IN), enableDIR, RISING);
+  //attachInterrupt(digitalPinToInterrupt(SW1_R_IN), toggle_disp_down, RISING);
   display.begin();//initialize display
 
   display.clearDisplay();
@@ -57,19 +57,24 @@ void setup() {
   //test_leds(left);
   //test_leds(right);
   Wire.begin(8);
-  Wire.onReceive(receiveEvent); // register event
+  //Wire.onReceive(receiveEvent); // register event
 
   
 }
 
 void loop() {
 
-
-  //update variables to be displayed
-
-  //update LEDs
- 
   
+  
+  //update display vars from MOBO
+  
+  //update LEDs
+ display.clearDisplay();
+ draw_page_0();
+ display.display();
+ Serial.println("asdf ");     
+ Serial.println(dir_enabled);
+ /* 
   switch (disp_page) {
     case 0:
       display.clearDisplay();
@@ -85,9 +90,20 @@ void loop() {
       break;
 
   }
-
-
-
+*/
+ //handle buttons
+ int8_t switch_pos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+ if(dir_enabled){
+  if(switch_pos!=dir){
+    dir = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+    dir_enabled = 0;
+  }
+ }
+ if(digitalRead(SW1_L_IN) && switch_pos == dir){
+   dir_enabled = 1;
+ }else{
+   dir_enabled = 0;
+ }
 }
 
 // function that executes whenever data is received from master
@@ -113,20 +129,20 @@ void receiveEvent(int howMany) {
 
 
 
-void draw_dir(uint8_t dir) {
+void draw_dir(int8_t dir) {
 
   char dir_char = 'X';
   uint16_t start_x = display.width() - dir_char_wid * 3;
   uint16_t start_y = 0;
   uint16_t offset = 4;
   switch (dir) {
-    case 0:
+    case 1:
       dir_char = 'D';
       break;
-    case 1:
+    case 0:
       dir_char = 'N';
       break;
-    case 2:
+    case -1:
       dir_char = 'R';
       break;
     default:
@@ -242,3 +258,8 @@ void toggle_disp_down() {
   Serial.println(disp_page);
 }
 
+void enableDIR(){
+  Serial.println("you pressed a button congrats");
+  int8_t switchPos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+  
+}

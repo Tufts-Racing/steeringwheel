@@ -11,9 +11,10 @@
 
 // Buttons/Switches
 #define SW1_L_IN 2
-#define SW1_R_IN 3
-#define TOGGLE_L_IN A0
-#define TOGGLE_R_IN A1
+#define SW1_R_IN 12
+#define FORWARD_IN A0
+#define REVERSE_IN A2
+#define DIR_PUSH_IN A6
 
 //LEDs
 #define LED_R A3
