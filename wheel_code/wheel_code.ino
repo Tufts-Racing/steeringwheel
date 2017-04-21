@@ -67,7 +67,8 @@ void loop() {
   
   
   //update display vars from MOBO
-  
+
+ Wire.write(dir);
   //update LEDs
  display.clearDisplay();
  draw_page_0();
