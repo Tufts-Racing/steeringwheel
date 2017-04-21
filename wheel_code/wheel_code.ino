@@ -68,7 +68,9 @@ void loop() {
   
   //update display vars from MOBO
 
- Wire.write(dir);
+
+ Wire.onRequest(requestEvent);
+ 
   //update LEDs
  display.clearDisplay();
  draw_page_0();
@@ -264,3 +266,8 @@ void enableDIR(){
   int8_t switchPos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
   
 }
+
+void requestEvent() {
+  Wire.write(dir);
+}
+
