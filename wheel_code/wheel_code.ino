@@ -63,9 +63,6 @@ void setup() {
 }
 
 void loop() {
-
-  
-  
   //update display vars from MOBO
 
 
@@ -189,6 +186,7 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
     output = output + "ERR:" ;
     if (IMD_STATE == 1) {
       output = output + "IMD ";
+      digitalWrite(LED_R,HIGH);
     }
     if (BMS_STATE == 1) {
       output = output + "BMS ";
