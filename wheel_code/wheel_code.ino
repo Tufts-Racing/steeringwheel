@@ -57,17 +57,14 @@ void setup() {
   //test_leds(left);
   //test_leds(right);
   Wire.begin(8);
-  //Wire.onReceive(receiveEvent); // register event
-
-  
+  Wire.onReceive(receiveEvent); // register event
+  Wire.onRequest(requestEvent);
 }
 
 void loop() {
   //update display vars from MOBO
 
 
- Wire.onRequest(requestEvent);
- 
   //update LEDs
  display.clearDisplay();
  draw_page_0();
@@ -93,9 +90,11 @@ void loop() {
 */
  //handle buttons
  int8_t switch_pos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+ Serial.println("dir enabled:");
+ Serial.println(dir_enabled);
  if(dir_enabled){
   if(switch_pos!=dir){
-    dir = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+    dir = switch_pos;
     dir_enabled = 0;
   }
  }
@@ -109,12 +108,11 @@ void loop() {
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) {
-
+  //Serial.println("receiving event");
   //rpm = Wire.read();
   //odo = Wire.read();
   battery_temp = Wire.read();
   t_pressure = Wire.read();
-  dir = Wire.read();
   spd = Wire.read();
   LV_SOC = Wire.read();
   HV_SOC = Wire.read();
@@ -267,5 +265,6 @@ void enableDIR(){
 
 void requestEvent() {
   Wire.write(dir);
+  //Serial.println("dir_requested");
 }
 
