@@ -69,8 +69,6 @@ void loop() {
  display.clearDisplay();
  draw_page_0();
  display.display();
- Serial.println("asdf ");     
- Serial.println(dir_enabled);
  /* 
   switch (disp_page) {
     case 0:
@@ -90,8 +88,8 @@ void loop() {
 */
  //handle buttons
  int8_t switch_pos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
- Serial.println("dir enabled:");
- Serial.println(dir_enabled);
+ //Serial.println("dir enabled:");
+ //Serial.println(dir_enabled);
  if(dir_enabled){
   if(switch_pos!=dir){
     dir = switch_pos;
@@ -177,7 +175,7 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
 
   String  output = "";
 
-  if (IMD_STATE + BMS_STATE + SEVCON_STATE + BRAKE_STATE == 0) {
+  if (IMD_STATE + BMS_STATE + SEVCON_STATE + !BRAKE_STATE == 0) {
     display.print("SYSTEM:OK");
   }
   else {
@@ -185,6 +183,8 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
     if (IMD_STATE == 1) {
       output = output + "IMD ";
       digitalWrite(LED_R,HIGH);
+    }else{
+      digitalWrite(LED_R,LOW);
     }
     if (BMS_STATE == 1) {
       output = output + "BMS ";
@@ -192,7 +192,7 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
     if (SEVCON_STATE == 1) {
       output = output + "SVCN ";
     }
-    if (BRAKE_STATE == 1) {
+    if (BRAKE_STATE == 0) {
       output = output + "BRK ";
     }
     display.print(output);
