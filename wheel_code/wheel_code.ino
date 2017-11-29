@@ -17,7 +17,10 @@ uint8_t disp_page; //display page
 //uint8_t odo; //miles
 uint8_t battery_temp; //Farenheit
 uint8_t t_pressure; //psi
+
 int8_t dir = 0; //1 = forward, 0 = neutral, -1 = reverse. init neutral
+int8_t switch_pos = 'E';
+
 uint8_t spd;//speed in mph
 uint8_t LV_SOC;
 uint8_t HV_SOC;
@@ -30,7 +33,7 @@ uint8_t dir_enabled = 0; //direction enable button is down - init false
 
 void setup() {
   Serial.begin(9600);
-  Serial.println('Display Startup');
+  Serial.println("Display Startup");
   //UI I/O
   pinMode(SW1_L_IN, INPUT);
   pinMode(SW1_R_IN, INPUT);
@@ -89,9 +92,15 @@ void loop() {
   }
 */
  //handle buttons
- int8_t switch_pos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+ //int8_t switch_pos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+
+ enableDIR(); //Sets switch_pos
+
+ 
  Serial.println("dir enabled:");
  Serial.println(dir_enabled);
+
+ 
  if(dir_enabled){
   if(switch_pos!=dir){
     dir = switch_pos;
@@ -111,6 +120,10 @@ void receiveEvent(int howMany) {
   //Serial.println("receiving event");
   //rpm = Wire.read();
   //odo = Wire.read();
+
+  Serial.print("Receiving Event, should be 9, is ");
+  Serial.println(howMany, DEC);
+  
   battery_temp  = Wire.read();
   t_pressure    = Wire.read();
   spd           = Wire.read();
@@ -129,8 +142,9 @@ void receiveEvent(int howMany) {
 
 void draw_dir(int8_t dir) {
 
-  char dir_char = 'X';
-  uint16_t start_x = display.width() - dir_char_wid * 3;
+  char dir_char = 'E'; //Base case is error
+  
+  uint16_t start_x = display.width() - dir_char_wid * 3; /* TODO CHANGE THE CALCULATIONS HERE BB*/
   uint16_t start_y = 0;
   uint16_t offset = 4;
   switch (dir) {
@@ -144,6 +158,7 @@ void draw_dir(int8_t dir) {
       dir_char = 'R';
       break;
     default:
+      dir_char = 'E'; //Error case
       break;
   }
 
@@ -214,7 +229,7 @@ void draw_stats(uint8_t temp, uint8_t pres, uint8_t IMD_STATE, uint8_t BMS_STATE
   display.println(pres);
   display.println("");
   display.println("");
-  status_mesg(IMD_FLT, BMS_FLT, SEVCON_FLT, BRAKE_FLT);
+  status_mesg(IMD_STATE, BMS_STATE, SEVCON_STATE, BRAKE_STATE);
 
   display.drawFastVLine(info_text_wid * 5, 0, info_text_hgt * 4 + 10, WHITE);
   display.drawFastHLine(0, info_text_hgt * 4 + 10, info_text_wid * 5, WHITE);
@@ -242,24 +257,28 @@ void toggle_disp_up() {
 
   disp_page = disp_page + 1;
 
-  if (disp_page > max_page - 1) {
+  if (disp_page >= max_page) {
     disp_page = 0;
   }
   Serial.println(disp_page);
 }
 
+/* FIGURE OUT WHAT THIS DOES*/
 void toggle_disp_down() {
 
-  disp_page = disp_page - 1;
-  if (disp_page < 0) {
+  disp_page = disp_page - 1; //disp_page is unsigned int, will automatically underflow
+  if (disp_page >= max_page) {
     disp_page = max_page - 1;
   }
+
   Serial.println(disp_page);
 }
 
-void enableDIR(){
+ /* DOESN"T NEED TO BE GLOBAL?*/
+void enableDIR(){ 
   Serial.println("you pressed a button congrats");
-  int8_t switchPos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+  switch_pos = digitalRead(FORWARD_IN) - digitalRead(REVERSE_IN); /* DOESN"T NEED TO BE GLOBAL?*/
+  //int8_t switchPos = digitalRead(FORWARD_IN) - digitalRead(REVERSE_IN);
   
 }
 
