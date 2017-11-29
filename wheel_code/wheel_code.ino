@@ -22,10 +22,10 @@ uint8_t spd;//speed in mph
 uint8_t LV_SOC;
 uint8_t HV_SOC;
 
-uint8_t IMD_FLT;
-uint8_t BMS_FLT;
-uint8_t SEVCON_FLT;
-uint8_t BRAKE_FLT;
+uint8_t IMD_FLT     = 0;
+uint8_t BMS_FLT     = 0;
+uint8_t SEVCON_FLT  = 0;
+uint8_t BRAKE_FLT   = 0;
 uint8_t dir_enabled = 0; //direction enable button is down - init false
 
 void setup() {
@@ -111,11 +111,11 @@ void receiveEvent(int howMany) {
   //Serial.println("receiving event");
   //rpm = Wire.read();
   //odo = Wire.read();
-  battery_temp = Wire.read();
-  t_pressure = Wire.read();
-  spd = Wire.read();
-  LV_SOC = Wire.read();
-  HV_SOC = Wire.read();
+  battery_temp  = Wire.read();
+  t_pressure    = Wire.read();
+  spd           = Wire.read();
+  LV_SOC        = Wire.read();
+  HV_SOC        = Wire.read();
   
   IMD_FLT = Wire.read();
   BMS_FLT = Wire.read();

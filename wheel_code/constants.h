@@ -15,6 +15,6 @@
 
 #define info_text_wid 5
 #define info_text_hgt 8
-#define info_text_scale 1
+#define info_text_scale uint8_t(1)
 
 #endif
