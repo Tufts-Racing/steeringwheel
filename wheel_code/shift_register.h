@@ -72,7 +72,7 @@ void set_leds(uint8_t level, uint8_t side){
         //These are currently unused - Issue?
 //  num_cleared = 8 - level;
 
-  Serial.print("Setting LEDS, level: ");
+  Serial.print("Setting LEDS, level: "); /* FIGURE THIS OUT */
   Serial.println(level, DEC);
   
   clear_reg(side);

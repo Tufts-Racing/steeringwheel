@@ -29,6 +29,7 @@ uint8_t IMD_FLT     = 0;
 uint8_t BMS_FLT     = 0;
 uint8_t SEVCON_FLT  = 0;
 uint8_t BRAKE_FLT   = 0;
+uint8_t COCKPIT_SW  = 0;
 uint8_t dir_enabled = 0; //direction enable button is down - init false
 
 void setup() {
@@ -109,7 +110,7 @@ void loop() {
  }
  if(digitalRead(SW1_L_IN) && switch_pos == dir){
    dir_enabled = 1;
- }else{
+ } else {
    dir_enabled = 0;
  }
 }
@@ -121,7 +122,7 @@ void receiveEvent(int howMany) {
   //rpm = Wire.read();
   //odo = Wire.read();
 
-  Serial.print("Receiving Event, should be 9, is ");
+  Serial.print("Receiving Event, should be 10, is ");
   Serial.println(howMany, DEC);
   
   battery_temp  = Wire.read();
@@ -134,6 +135,7 @@ void receiveEvent(int howMany) {
   BMS_FLT = Wire.read();
   SEVCON_FLT = Wire.read();
   BRAKE_FLT = Wire.read();
+  COCKPIT_SW = Wire.read();
   
 }
 
@@ -188,34 +190,42 @@ void draw_speed(uint8_t spd) {
 
 }
 
-void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uint8_t BRAKE_STATE) {
+void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uint8_t BRAKE_STATE, uint8_t COCKPIT_STATE) {
 
   String  output = "";
 
   if (IMD_STATE + BMS_STATE + SEVCON_STATE + BRAKE_STATE == 0) {
     display.print("SYSTEM:OK");
   }
-  else {
-    output = output + "ERR:" ;
-    if (IMD_STATE == 1) {
-      output = output + "IMD ";
-      digitalWrite(LED_R,HIGH);
-    }
+  else { //ORDER: BMS IMD BRK CKPT SEVCON 
+    output = output + "ERR:" ;  
+    
     if (BMS_STATE == 1) {
       output = output + "BMS ";
     }
-    if (SEVCON_STATE == 1) {
-      output = output + "SVCN ";
+    else if (IMD_STATE == 1) {
+      output = output + "IMD ";
+      digitalWrite(LED_R,HIGH);
     }
-    if (BRAKE_STATE == 1) {
+    else if (BRAKE_STATE == 1) {
       output = output + "BRK ";
     }
+    else if (COCKPIT_STATE == 1) {
+      output = output + "CKP ";
+    }
+    else if (SEVCON_STATE == 1) {
+      output = output + "SVCN ";
+    }
+    else {
+      output = output + "ERR ";
+    }
+
     display.print(output);
   }
 
 }
 
-void draw_stats(uint8_t temp, uint8_t pres, uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uint8_t BRAKE_STATE) {
+void draw_stats(uint8_t temp, uint8_t pres, uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uint8_t BRAKE_STATE, uint8_t COCKPIT_STATE) {
 
 
   display.setCursor(0, 0);
@@ -229,7 +239,7 @@ void draw_stats(uint8_t temp, uint8_t pres, uint8_t IMD_STATE, uint8_t BMS_STATE
   display.println(pres);
   display.println("");
   display.println("");
-  status_mesg(IMD_STATE, BMS_STATE, SEVCON_STATE, BRAKE_STATE);
+  status_mesg(IMD_STATE, BMS_STATE, SEVCON_STATE, BRAKE_STATE, COCKPIT_STATE);
 
   display.drawFastVLine(info_text_wid * 5, 0, info_text_hgt * 4 + 10, WHITE);
   display.drawFastHLine(0, info_text_hgt * 4 + 10, info_text_wid * 5, WHITE);
@@ -243,7 +253,7 @@ void draw_page_0(void) {
   //display.drawRect(0, 0, display.width(), display.height(), WHITE);
   draw_dir(dir);
   draw_speed(spd);
-  draw_stats(battery_temp, t_pressure, IMD_FLT, BMS_FLT, SEVCON_FLT, BRAKE_FLT);
+  draw_stats(battery_temp, t_pressure, IMD_FLT, BMS_FLT, SEVCON_FLT, BRAKE_FLT, COCKPIT_SW);
 
 }
 
