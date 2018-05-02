@@ -19,7 +19,7 @@ uint8_t battery_temp; //Farenheit
 uint8_t t_pressure; //psi
 
 int8_t dir = 0; //1 = forward, 0 = neutral, -1 = reverse. init neutral
-int8_t switch_pos = 'E';
+int8_t switch_pos = 0;
 
 uint8_t spd;//speed in mph
 uint8_t LV_SOC;
@@ -30,6 +30,8 @@ uint8_t BMS_FLT     = 0;
 uint8_t SEVCON_FLT  = 0;
 uint8_t BRAKE_FLT   = 0;
 uint8_t COCKPIT_SW  = 0;
+
+
 uint8_t dir_enabled = 0; //direction enable button is down - init false
 
 void setup() {
@@ -48,10 +50,10 @@ void setup() {
   pinMode(SERIAL_2, OUTPUT);
   pinMode(CLK_2, OUTPUT);
   pinMode(CLR_2, OUTPUT);
-  
 
-  attachInterrupt(digitalPinToInterrupt(SW1_L_IN), enableDIR, RISING);
-  //attachInterrupt(digitalPinToInterrupt(SW1_R_IN), toggle_disp_down, RISING);
+
+  attachInterrupt(digitalPinToInterrupt(SW1_L_IN), enableDIR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(SW1_R_IN), toggle_disp_down, RISING);
   display.begin();//initialize display
 
   display.clearDisplay();
@@ -70,77 +72,52 @@ void loop() {
 
 
   //update LEDs
- display.clearDisplay();
- draw_page_0();
- display.display();
- /* 
+  display.clearDisplay();
   switch (disp_page) {
     case 0:
-      display.clearDisplay();
       draw_page_0();
-      display.display();
       break;
     case 1:
-      display.clearDisplay();
       draw_page_1();
-      display.display();
       break;
     default:
       break;
 
   }
-*/
- //handle buttons
-<<<<<<< HEAD
- int8_t switch_pos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
- //Serial.println("dir enabled:");
- //Serial.println(dir_enabled);
-=======
- //int8_t switch_pos = digitalRead(FORWARD_IN)-digitalRead(REVERSE_IN);
+  display.display();
 
- enableDIR(); //Sets switch_pos
-
- 
- Serial.println("dir enabled:");
- Serial.println(dir_enabled);
-
- 
->>>>>>> origin/master
- if(dir_enabled){
-  if(switch_pos!=dir){
-    dir = switch_pos;
-    dir_enabled = 0;
+  //handle buttons
+  switch_pos = digitalRead(FORWARD_IN) - digitalRead(REVERSE_IN);
+  if (dir_enabled) {
+    if (switch_pos != dir) {
+      dir = switch_pos;
+      dir_enabled = 0;
+    }
   }
- }
- if(digitalRead(SW1_L_IN) && switch_pos == dir){
-   dir_enabled = 1;
- } else {
-   dir_enabled = 0;
- }
+  
 }
 
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) {
-  //Serial.println("receiving event");
   //rpm = Wire.read();
   //odo = Wire.read();
 
   Serial.print("Receiving Event, should be 10, is ");
   Serial.println(howMany, DEC);
-  
+
   battery_temp  = Wire.read();
   t_pressure    = Wire.read();
   spd           = Wire.read();
   LV_SOC        = Wire.read();
   HV_SOC        = Wire.read();
-  
+
   IMD_FLT = Wire.read();
   BMS_FLT = Wire.read();
   SEVCON_FLT = Wire.read();
   BRAKE_FLT = Wire.read();
   COCKPIT_SW = Wire.read();
-  
+
 }
 
 
@@ -149,7 +126,7 @@ void receiveEvent(int howMany) {
 void draw_dir(int8_t dir) {
 
   char dir_char = 'E'; //Base case is error
-  
+
   uint16_t start_x = display.width() - dir_char_wid * 3; /* TODO CHANGE THE CALCULATIONS HERE BB*/
   uint16_t start_y = 0;
   uint16_t offset = 4;
@@ -201,36 +178,31 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
   if (IMD_STATE + BMS_STATE + SEVCON_STATE + !BRAKE_STATE == 0) {
     display.print("SYSTEM:OK");
   }
-  else { //ORDER: BMS IMD BRK CKPT SEVCON 
-    output = output + "ERR:" ;  
-    
-    if (BMS_STATE == 1) {
+  else { //ORDER: BMS IMD BRK CKPT SEVCON
+    output = output + "ERR:" ;
+    /*
+      if (BMS_STATE == 1) {
       output = output + "BMS ";
-    }
-    else if (IMD_STATE == 1) {
+      }
+      else if (IMD_STATE == 1) {
       output = output + "IMD ";
       digitalWrite(LED_R,HIGH);
-    }else{
+      }else{
       digitalWrite(LED_R,LOW);
-    }
-    else if (BRAKE_STATE == 1) {
+      }
+      else if (BRAKE_STATE == 1) {
       output = output + "BRK ";
-    }
-    else if (COCKPIT_STATE == 1) {
+      }
+      else if (COCKPIT_STATE == 1) {
       output = output + "CKP ";
-    }
-    else if (SEVCON_STATE == 1) {
+      }
+      else if (SEVCON_STATE == 1) {
       output = output + "SVCN ";
-    }
-<<<<<<< HEAD
-    if (BRAKE_STATE == 0) {
-      output = output + "BRK ";
-=======
-    else {
+      }
+      else {
       output = output + "ERR ";
->>>>>>> origin/master
-    }
-
+      }
+    */
     display.print(output);
   }
 
@@ -281,26 +253,30 @@ void toggle_disp_up() {
   if (disp_page >= max_page) {
     disp_page = 0;
   }
+  Serial.print("Display page incremented to: ");
   Serial.println(disp_page);
 }
 
-/* FIGURE OUT WHAT THIS DOES*/
 void toggle_disp_down() {
 
   disp_page = disp_page - 1; //disp_page is unsigned int, will automatically underflow
   if (disp_page >= max_page) {
     disp_page = max_page - 1;
   }
-
+  Serial.print("Display page decremented to: ");
   Serial.println(disp_page);
 }
 
- /* DOESN"T NEED TO BE GLOBAL?*/
-void enableDIR(){ 
-  Serial.println("you pressed a button congrats");
-  switch_pos = digitalRead(FORWARD_IN) - digitalRead(REVERSE_IN); /* DOESN"T NEED TO BE GLOBAL?*/
-  //int8_t switchPos = digitalRead(FORWARD_IN) - digitalRead(REVERSE_IN);
-  
+/* DOESN"T NEED TO BE GLOBAL?*/
+void enableDIR() {
+  if (digitalRead(SW1_L_IN)) {
+    if (switch_pos == dir){
+      Serial.println("Drive direction toggle enabled");
+      dir_enabled = 1;
+    }
+  } else {
+    dir_enabled = 0;
+  }
 }
 
 void requestEvent() {
