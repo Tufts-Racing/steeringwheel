@@ -36,7 +36,7 @@ uint8_t dir_enabled = 0; //direction enable button is down - init false
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Display Startup");
+  //Serial.println("Display Startup");
   //UI I/O
   pinMode(SW1_L_IN, INPUT);
   pinMode(SW1_R_IN, INPUT);
@@ -52,7 +52,7 @@ void setup() {
   pinMode(CLR_2, OUTPUT);
 
 
-  attachInterrupt(digitalPinToInterrupt(SW1_L_IN), enableDIR, CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(SW1_L_IN), enableDIR, CHANGE);
   attachInterrupt(digitalPinToInterrupt(SW1_R_IN), toggle_disp_down, RISING);
   display.begin();//initialize display
 
@@ -86,10 +86,16 @@ void loop() {
   }
   display.display();
 
+
+  enableDIR();
   //handle buttons
   switch_pos = digitalRead(FORWARD_IN) - digitalRead(REVERSE_IN);
+  //Serial.print("Switch position: ");
+  Serial.println(switch_pos);
   if (dir_enabled) {
+    //Serial.println("Direction can change");
     if (switch_pos != dir) {
+      //Serial.println("Changing driving direction");
       dir = switch_pos;
       dir_enabled = 0;
     }
@@ -103,8 +109,8 @@ void receiveEvent(int howMany) {
   //rpm = Wire.read();
   //odo = Wire.read();
 
-  Serial.print("Receiving Event, should be 10, is ");
-  Serial.println(howMany, DEC);
+  //Serial.print("Receiving Event, should be 10, is ");
+  //Serial.println(howMany, DEC);
 
   battery_temp  = Wire.read();
   t_pressure    = Wire.read();
@@ -176,35 +182,31 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
   String  output = "";
 
   if (IMD_STATE + BMS_STATE + SEVCON_STATE + !BRAKE_STATE == 0) {
-    display.print("SYSTEM:OK");
+    output = "SYSTEM: OK";
   }
   else { //ORDER: BMS IMD BRK CKPT SEVCON
-    output = output + "ERR:" ;
-    /*
+      output = output + "ERR: " ;
+    
       if (BMS_STATE == 1) {
-      output = output + "BMS ";
+        output = output + "BMS ";
       }
-      else if (IMD_STATE == 1) {
-      output = output + "IMD ";
-      digitalWrite(LED_R,HIGH);
-      }else{
-      digitalWrite(LED_R,LOW);
+      if (IMD_STATE == 1) {
+        output = output + "IMD ";
+        digitalWrite(LED_R, HIGH);
+      } else {
+        digitalWrite(LED_R, LOW);
       }
-      else if (BRAKE_STATE == 1) {
-      output = output + "BRK ";
+      if (BRAKE_STATE == 1) {
+        output = output + "BRK ";
       }
-      else if (COCKPIT_STATE == 1) {
-      output = output + "CKP ";
+      if (COCKPIT_STATE == 1) {
+        output = output + "CKP ";
       }
-      else if (SEVCON_STATE == 1) {
-      output = output + "SVCN ";
+      if (SEVCON_STATE == 1) {
+        output = output + "SVCN ";
       }
-      else {
-      output = output + "ERR ";
-      }
-    */
-    display.print(output);
   }
+  display.print(output);
 
 }
 
@@ -253,8 +255,8 @@ void toggle_disp_up() {
   if (disp_page >= max_page) {
     disp_page = 0;
   }
-  Serial.print("Display page incremented to: ");
-  Serial.println(disp_page);
+  //Serial.print("Display page incremented to: ");
+  //Serial.println(disp_page);
 }
 
 void toggle_disp_down() {
@@ -263,15 +265,15 @@ void toggle_disp_down() {
   if (disp_page >= max_page) {
     disp_page = max_page - 1;
   }
-  Serial.print("Display page decremented to: ");
-  Serial.println(disp_page);
+  //Serial.print("Display page decremented to: ");
+  //Serial.println(disp_page);
 }
 
 /* DOESN"T NEED TO BE GLOBAL?*/
 void enableDIR() {
   if (digitalRead(SW1_L_IN)) {
     if (switch_pos == dir){
-      Serial.println("Drive direction toggle enabled");
+      //Serial.println("Drive direction toggle enabled");
       dir_enabled = 1;
     }
   } else {
@@ -283,4 +285,3 @@ void requestEvent() {
   Wire.write(dir);
   //Serial.println("dir_requested");
 }
-
