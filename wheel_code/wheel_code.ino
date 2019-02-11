@@ -7,21 +7,21 @@
 #include "constants.h"
 #include "shift_register.h"
 
-#define max_page 2
+#define MAX_PAGE 2
 
 Adafruit_SSD1325 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
 uint8_t disp_page; //display page
 
-//uint8_t rpm; //rpm
-//uint8_t odo; //miles
-uint8_t battery_temp; //Farenheit
-uint8_t t_pressure; //psi
+//uint8_t rpm;          //rpm
+//uint8_t odo;          //miles
+uint8_t battery_temp;   //Farenheit
+uint8_t t_pressure;     //psi
 
-int8_t dir = 0; //1 = forward, 0 = neutral, -1 = reverse. init neutral
+int8_t dir = 0;         //1 = forward, 0 = neutral, -1 = reverse. init neutral
 int8_t switch_pos = 0;
 
-uint8_t spd;//speed in mph
+uint8_t spd;            //speed in mph
 uint8_t LV_SOC;
 uint8_t HV_SOC;
 
@@ -36,7 +36,7 @@ uint8_t dir_enabled = 0; //direction enable button is down - init false
 
 void setup() {
   Serial.begin(9600);
-  //Serial.println("Display Startup");
+
   //UI I/O
   pinMode(SW1_L_IN, INPUT);
   pinMode(SW1_R_IN, INPUT);
@@ -54,14 +54,17 @@ void setup() {
 
   //attachInterrupt(digitalPinToInterrupt(SW1_L_IN), enableDIR, CHANGE);
   attachInterrupt(digitalPinToInterrupt(SW1_R_IN), toggle_disp_down, RISING);
-  display.begin();//initialize display
+  display.begin();
 
   display.clearDisplay();
   display.drawBitmap(0, 0,  LOGO, display.width(), display.height(), WHITE);
   display.display();
   delay(1000);
+
+  //TODO: figure out what these do, no function exists
   //test_leds(left);
   //test_leds(right);
+  
   Wire.begin(8);
   Wire.onReceive(receiveEvent); // register event
   Wire.onRequest(requestEvent);
@@ -82,20 +85,18 @@ void loop() {
       break;
     default:
       break;
-
   }
+  
   display.display();
 
 
   enableDIR();
   //handle buttons
   switch_pos = digitalRead(FORWARD_IN) - digitalRead(REVERSE_IN);
-  //Serial.print("Switch position: ");
+
   Serial.println(switch_pos);
   if (dir_enabled) {
-    //Serial.println("Direction can change");
     if (switch_pos != dir) {
-      //Serial.println("Changing driving direction");
       dir = switch_pos;
       dir_enabled = 0;
     }
@@ -103,14 +104,12 @@ void loop() {
   
 }
 
+
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) {
   //rpm = Wire.read();
   //odo = Wire.read();
-
-  //Serial.print("Receiving Event, should be 10, is ");
-  //Serial.println(howMany, DEC);
 
   battery_temp  = Wire.read();
   t_pressure    = Wire.read();
@@ -123,10 +122,7 @@ void receiveEvent(int howMany) {
   SEVCON_FLT = Wire.read();
   BRAKE_FLT = Wire.read();
   COCKPIT_SW = Wire.read();
-
 }
-
-
 
 
 void draw_dir(int8_t dir) {
@@ -156,6 +152,7 @@ void draw_dir(int8_t dir) {
   display.drawFastHLine(start_x - offset, start_y + dir_char_hgt * dir_char_scale, dir_char * dir_char_scale + offset, WHITE);
 }
 
+
 void draw_speed(uint8_t spd) {
   uint8_t wid = display.width();
   uint8_t hgt = display.height();
@@ -177,6 +174,7 @@ void draw_speed(uint8_t spd) {
 
 }
 
+
 void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uint8_t BRAKE_STATE, uint8_t COCKPIT_STATE) {
 
   String  output = "";
@@ -185,6 +183,7 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
     output = "SYSTEM: OK";
   }
   else { //ORDER: BMS IMD BRK CKPT SEVCON
+    //Note from Peter: we should go through order here because this is important but only in the lower half of the main GLV loop
       output = output + "ERR: " ;
     
       if (BMS_STATE == 1) {
@@ -207,11 +206,11 @@ void status_mesg(uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uin
       }
   }
   display.print(output);
-
 }
 
-void draw_stats(uint8_t temp, uint8_t pres, uint8_t IMD_STATE, uint8_t BMS_STATE, uint8_t SEVCON_STATE, uint8_t BRAKE_STATE, uint8_t COCKPIT_STATE) {
 
+void draw_stats(uint8_t temp, uint8_t pres, uint8_t IMD_STATE, uint8_t BMS_STATE,
+                uint8_t SEVCON_STATE, uint8_t BRAKE_STATE, uint8_t COCKPIT_STATE) {
 
   display.setCursor(0, 0);
   display.setTextColor(WHITE, BLACK);
@@ -242,38 +241,32 @@ void draw_page_0(void) {
 
 }
 
+
 void draw_page_1(void) {
   display.drawCircle(display.width() / 2, display.height() / 2, 20, WHITE);
 }
 
 
-
 void toggle_disp_up() {
 
-  disp_page = disp_page + 1;
-
-  if (disp_page >= max_page) {
+  disp_page++;
+  if (disp_page >= MAX_PAGE) {
     disp_page = 0;
   }
-  //Serial.print("Display page incremented to: ");
-  //Serial.println(disp_page);
 }
 
 void toggle_disp_down() {
 
-  disp_page = disp_page - 1; //disp_page is unsigned int, will automatically underflow
-  if (disp_page >= max_page) {
-    disp_page = max_page - 1;
+  disp_page--;              //disp_page is unsigned int, will automatically underflow
+  if (disp_page >= MAX_PAGE) {
+    disp_page = MAX_PAGE - 1;
   }
-  //Serial.print("Display page decremented to: ");
-  //Serial.println(disp_page);
 }
 
 /* DOESN"T NEED TO BE GLOBAL?*/
 void enableDIR() {
   if (digitalRead(SW1_L_IN)) {
     if (switch_pos == dir){
-      //Serial.println("Drive direction toggle enabled");
       dir_enabled = 1;
     }
   } else {
@@ -283,5 +276,4 @@ void enableDIR() {
 
 void requestEvent() {
   Wire.write(dir);
-  //Serial.println("dir_requested");
 }
